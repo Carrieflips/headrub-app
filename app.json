@@ -12,11 +12,15 @@
       "bundleIdentifier": "com.vibecode.headrub",
       "buildNumber": "3",
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "Head Rub uses the microphone to record audio tracks that the app attaches to your creations."
+        "NSMicrophoneUsageDescription": "Head Rub uses the microphone to record audio tracks that the app attaches to your creations.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -31,6 +35,12 @@
     "experiments": {
       "typedRoutes": true
     },
-    "icon": "./icon.png"
+    "icon": "./icon.png",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "f69299f1-a173-4b05-9ea0-b05b55d15f97"
+      }
+    }
   }
 }
