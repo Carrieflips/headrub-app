@@ -16,6 +16,7 @@
       "node": "24.14.1"
     },
     "production": {
+      "autoIncrement": true,
       "node": "24.14.1",
       "ios": {
         "distribution": "store"
