@@ -4,11 +4,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { accentStops, AccentStop } from '../constants/accentColors';
+import { colors } from '../constants/colors';
 import { useTheme } from '../contexts/ThemeContext';
 import { logEvent } from '../lib/analytics';
 
-const TRACK_HEIGHT = 4;
-const STOP_SIZE = 14;
+const TRACK_HEIGHT = 5;
+const STOP_DOT_UNSELECTED = 3;
 const STOP_SELECTED_SIZE = 22;
 const HIT_SLOP = { top: 16, bottom: 16, left: 8, right: 8 };
 
@@ -50,7 +51,6 @@ export default function LightSensitivitySlider() {
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           {accentStops.map(stop => {
             const selected = stop.key === palette;
-            const size = selected ? STOP_SELECTED_SIZE : STOP_SIZE;
 
             return (
               <Pressable
@@ -60,31 +60,40 @@ export default function LightSensitivitySlider() {
                 hitSlop={HIT_SLOP}
                 style={{ alignItems: 'center', justifyContent: 'center', width: STOP_SELECTED_SIZE, height: STOP_SELECTED_SIZE }}
               >
-                {/* Outer ring for selected state */}
-                {selected === true && (
+                {selected ? (
+                  <>
+                    <View
+                      style={{
+                        position: 'absolute',
+                        width: STOP_SELECTED_SIZE,
+                        height: STOP_SELECTED_SIZE,
+                        borderRadius: STOP_SELECTED_SIZE / 2,
+                        borderWidth: 2,
+                        borderColor: stop.hex,
+                        opacity: 0.5,
+                      }}
+                    />
+                    <View
+                      style={{
+                        width: STOP_SELECTED_SIZE,
+                        height: STOP_SELECTED_SIZE,
+                        borderRadius: STOP_SELECTED_SIZE / 2,
+                        backgroundColor: stop.hex,
+                        borderWidth: 2,
+                        borderColor: '#000000',
+                      }}
+                    />
+                  </>
+                ) : (
                   <View
                     style={{
-                      position: 'absolute',
-                      width: STOP_SELECTED_SIZE,
-                      height: STOP_SELECTED_SIZE,
-                      borderRadius: STOP_SELECTED_SIZE / 2,
-                      borderWidth: 2,
-                      borderColor: stop.hex,
-                      opacity: 0.5,
+                      width: STOP_DOT_UNSELECTED,
+                      height: STOP_DOT_UNSELECTED,
+                      borderRadius: STOP_DOT_UNSELECTED / 2,
+                      backgroundColor: colors.black,
                     }}
                   />
                 )}
-                {/* Dot */}
-                <View
-                  style={{
-                    width: size,
-                    height: size,
-                    borderRadius: size / 2,
-                    backgroundColor: stop.hex,
-                    borderWidth: selected ? 2 : 1.5,
-                    borderColor: selected ? '#000000' : 'rgba(0,0,0,0.3)',
-                  }}
-                />
               </Pressable>
             );
           })}

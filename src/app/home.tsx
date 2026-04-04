@@ -360,7 +360,7 @@ export default function Home() {
         <View style={styles.header}>
           <HeadRubIcon size={36} color={textPrimary} />
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-            <AccessibilityMenu />
+            <AccessibilityMenu placementPreset="home" />
             <TouchableOpacity
               onPress={() => router.push('/settings')}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}

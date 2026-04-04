@@ -66,6 +66,16 @@ export default function Settings() {
           <ChevronRight size={16} color={textMuted} />
         </TouchableOpacity>
 
+        <TouchableOpacity
+          style={rowStyle}
+          onPress={() => router.push('/settings/citations')}
+          activeOpacity={0.7}
+          testID="row-citations"
+        >
+          <Body style={{ color: textPrimary }}>Citations</Body>
+          <ChevronRight size={16} color={textMuted} />
+        </TouchableOpacity>
+
         {/* PAYWALL_ENABLED = false: Plan screen hidden from nav.
             To restore: set PAYWALL_ENABLED = true in constants/flags.ts */}
         {PAYWALL_ENABLED ? (
