@@ -1,6 +1,14 @@
 import { useLocalSearchParams, router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { View, useWindowDimensions, Alert, Pressable } from 'react-native';
+import {
+  View,
+  useWindowDimensions,
+  Alert,
+  Pressable,
+  StyleSheet,
+  Animated as RNAnimated,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue,
   withTiming,
@@ -43,6 +51,60 @@ interface RoutineStep {
   has_switch_sides: boolean;
   image_url: string;
   region: string;
+}
+
+const BG_BLACK = '#000000';
+const BG_WARM_BLACK = '#0D0605';
+/** Peak opacity of the pulsing layer — kept low for a barely perceptible “living” background. */
+const PULSE_OPACITY_PEAK = 0.08;
+
+function RoutineScreenBackground() {
+  const pulseOpacity = useRef(new RNAnimated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.timing(pulseOpacity, {
+          toValue: PULSE_OPACITY_PEAK,
+          duration: 4000,
+          useNativeDriver: true,
+        }),
+        RNAnimated.timing(pulseOpacity, {
+          toValue: 0,
+          duration: 4000,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [pulseOpacity]);
+
+  return (
+    <>
+      <LinearGradient
+        colors={[BG_BLACK, BG_WARM_BLACK]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[StyleSheet.absoluteFill, { zIndex: 0 }]}
+        pointerEvents="none"
+      />
+      <RNAnimated.View
+        style={[
+          StyleSheet.absoluteFill,
+          { zIndex: 0, opacity: pulseOpacity },
+        ]}
+        pointerEvents="none"
+      >
+        <LinearGradient
+          colors={[BG_WARM_BLACK, BG_BLACK]}
+          start={{ x: 0, y: 1 }}
+          end={{ x: 1, y: 0 }}
+          style={StyleSheet.absoluteFill}
+        />
+      </RNAnimated.View>
+    </>
+  );
 }
 
 interface Routine {
@@ -481,32 +543,38 @@ export default function RoutineScreen() {
 
   if (loading) {
     return (
-      <View
-        testID="loading-indicator"
-        style={{
-          flex: 1,
-          backgroundColor: colors.background,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Label style={{ color: colors.textPrimary }}>LOADING</Label>
+      <View testID="loading-indicator" style={{ flex: 1 }}>
+        <RoutineScreenBackground />
+        <View
+          style={{
+            flex: 1,
+            zIndex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'transparent',
+          }}
+        >
+          <Label style={{ color: colors.textPrimary }}>LOADING</Label>
+        </View>
       </View>
     );
   }
 
   if (error || !routine) {
     return (
-      <View
-        testID="error-view"
-        style={{
-          flex: 1,
-          backgroundColor: colors.background,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Label style={{ color: colors.textPrimary }}>SOMETHING WENT WRONG</Label>
+      <View testID="error-view" style={{ flex: 1 }}>
+        <RoutineScreenBackground />
+        <View
+          style={{
+            flex: 1,
+            zIndex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'transparent',
+          }}
+        >
+          <Label style={{ color: colors.textPrimary }}>SOMETHING WENT WRONG</Label>
+        </View>
       </View>
     );
   }
@@ -528,7 +596,9 @@ export default function RoutineScreen() {
   const introImageUrl = routine.conditions?.intro_image_url ?? null;
 
   return (
-    <Animated.View style={[{ flex: 1 }, animatedBgStyle]}>
+    <View style={{ flex: 1 }}>
+      <RoutineScreenBackground />
+      <Animated.View style={[{ flex: 1, zIndex: 1 }, animatedBgStyle]}>
     <SafeAreaView testID={isComplete ? 'completion-screen' : 'routine-screen'} style={{ flex: 1, backgroundColor: 'transparent' }}>
       {/* Top bar */}
       <View
@@ -710,6 +780,7 @@ export default function RoutineScreen() {
         </>
       )}
     </SafeAreaView>
-    </Animated.View>
+      </Animated.View>
+    </View>
   );
 }

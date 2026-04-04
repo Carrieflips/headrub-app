@@ -9,6 +9,8 @@ import { useTheme } from '../contexts/ThemeContext';
 import { logEvent } from '../lib/analytics';
 
 const TRACK_HEIGHT = 5;
+/** Horizontal extension of the gradient past the outer edge of the first/last stop. */
+const TRACK_OVERHANG = 2;
 const STOP_DOT_UNSELECTED = 3;
 const STOP_SELECTED_SIZE = 22;
 const HIT_SLOP = { top: 16, bottom: 16, left: 8, right: 8 };
@@ -40,8 +42,8 @@ export default function LightSensitivitySlider() {
           end={{ x: 1, y: 0 }}
           style={{
             position: 'absolute',
-            left: STOP_SELECTED_SIZE / 2,
-            right: STOP_SELECTED_SIZE / 2,
+            left: -TRACK_OVERHANG,
+            right: -TRACK_OVERHANG,
             height: TRACK_HEIGHT,
             borderRadius: TRACK_HEIGHT / 2,
           }}
