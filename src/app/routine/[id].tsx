@@ -1,13 +1,14 @@
 import { useLocalSearchParams, router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   useWindowDimensions,
-  Alert,
   Pressable,
   StyleSheet,
   Animated as RNAnimated,
+  Modal,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue,
@@ -155,6 +156,7 @@ export default function RoutineScreen() {
   const sessionIdRef = useRef<string | null>(null);
   const currentStepIndexRef = useRef<number>(-1);
   const trialConsumedRef = useRef<boolean>(false);
+  const [leaveConfirmVisible, setLeaveConfirmVisible] = useState(false);
 
   const progressShared = useSharedValue(0);
   const progressBarWidth = useSharedValue(0);
@@ -438,6 +440,34 @@ export default function RoutineScreen() {
     presentPaywallModal();
   }, [isComplete, isSubscriber]);
 
+  const confirmLeaveRoutine = useCallback(async () => {
+    setLeaveConfirmVisible(false);
+    const id = sessionIdRef.current;
+    const stepIndex = currentStepIndexRef.current;
+    const denom = steps.length > 0 ? steps.length : 1;
+    const completionPct = Math.round(((stepIndex + 1) / denom) * 100);
+    const stepReached = stepIndex + 1;
+    if (id) {
+      await supabase
+        .from('sessions')
+        .update({
+          completed_at: new Date().toISOString(),
+          completion_pct: completionPct,
+          step_reached: stepReached,
+        })
+        .eq('id', id);
+    } else {
+      console.log('[session] handleExit: sessionId is null, skipping update');
+    }
+    await logEvent('session_abandoned', {
+      step_reached: stepReached,
+      completion_pct: completionPct,
+    });
+    release();
+    deactivateKeepAwake();
+    router.back();
+  }, [steps.length]);
+
   const handleExit = () => {
     // During countdown / begin-intro phase: exit immediately, no dialog
     if (currentStepIndex === -1) {
@@ -468,42 +498,7 @@ export default function RoutineScreen() {
       router.back();
       return;
     }
-    Alert.alert(
-      'Leave this routine?',
-      undefined,
-      [
-        { text: 'Keep going', style: 'cancel' },
-        {
-          text: 'Leave',
-          style: 'destructive',
-          onPress: async () => {
-            const id = sessionIdRef.current;
-            const stepIndex = currentStepIndexRef.current;
-            const completionPct = Math.round((stepIndex + 1) / steps.length * 100);
-            const stepReached = stepIndex + 1;
-            if (id) {
-              await supabase
-                .from('sessions')
-                .update({
-                  completed_at: new Date().toISOString(),
-                  completion_pct: completionPct,
-                  step_reached: stepReached,
-                })
-                .eq('id', id);
-            } else {
-              console.log('[session] handleExit: sessionId is null, skipping update');
-            }
-            await logEvent('session_abandoned', {
-              step_reached: stepReached,
-              completion_pct: completionPct,
-            });
-            release();
-            deactivateKeepAwake();
-            router.back();
-          },
-        },
-      ],
-    );
+    setLeaveConfirmVisible(true);
   };
 
   // Clear countdown interval as soon as we leave the begin segment
@@ -702,18 +697,7 @@ export default function RoutineScreen() {
                   contentFit="cover"
                 />
               ) : (
-                <View
-                  style={{
-                    width: screenWidth,
-                    height: screenWidth,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Label style={{ color: colors.textMuted }}>
-                    {displayStep?.title?.toUpperCase() ?? ''}
-                  </Label>
-                </View>
+                <View style={{ width: screenWidth, height: screenWidth }} />
               )}
               </Animated.View>
               {!isCountdownActive && (
@@ -781,6 +765,75 @@ export default function RoutineScreen() {
       )}
     </SafeAreaView>
       </Animated.View>
+
+      <Modal
+        visible={leaveConfirmVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLeaveConfirmVisible(false)}
+        statusBarTranslucent
+        testID="leave-routine-modal"
+      >
+        <View style={{ flex: 1 }}>
+          <BlurView
+            intensity={72}
+            tint="dark"
+            style={StyleSheet.absoluteFill}
+            pointerEvents="none"
+            experimentalBlurMethod="dimezisBlurView"
+          />
+          <Pressable
+            testID="leave-routine-backdrop"
+            style={StyleSheet.absoluteFill}
+            onPress={() => setLeaveConfirmVisible(false)}
+          />
+          <View
+            style={{
+              flex: 1,
+              justifyContent: 'center',
+              paddingHorizontal: 24,
+            }}
+            pointerEvents="box-none"
+          >
+            <View
+              style={{
+                backgroundColor: colors.surfaceDeep,
+                borderWidth: 1,
+                borderColor: colors.surfaceBorder,
+                borderRadius: 14,
+                paddingVertical: 24,
+                paddingHorizontal: 20,
+                gap: 16,
+                overflow: 'hidden',
+              }}
+            >
+              <Subtitle style={{ color: textPrimary, textAlign: 'center' }}>
+                Leave this routine?
+              </Subtitle>
+              <View style={{ gap: 14, marginTop: 8 }}>
+                <PrimaryButton
+                  label="Keep going"
+                  onPress={() => setLeaveConfirmVisible(false)}
+                  hideArrow
+                  testID="leave-routine-keep"
+                  style={{ alignSelf: 'stretch', justifyContent: 'center' }}
+                />
+                <Pressable
+                  onPress={() => {
+                    void confirmLeaveRoutine();
+                  }}
+                  testID="leave-routine-confirm"
+                  style={{ paddingVertical: 8, alignItems: 'center' }}
+                >
+                  <Body style={{ color: textPrimary, textDecorationLine: 'underline' }}>
+                    Leave
+                  </Body>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
